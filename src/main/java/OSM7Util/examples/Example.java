@@ -61,7 +61,7 @@ public class Example {
 
         System.out.println("Calculating requirements...");
 
-        OSM7VNFDExtractor vnfCirrosExtract = new OSM7VNFDExtractor(cirrosVnfFile);
+        OSM7VNFDExtractor vnfCirrosExtract = new OSM7VNFDExtractor(cirrosVnfFile.getPath());
         Vnfd cirrosVnfDescriptor = vnfCirrosExtract.extractVnfdDescriptor();
         OSM7VNFRequirements cirrosVnfRequirements = new OSM7VNFRequirements(cirrosVnfDescriptor);
 

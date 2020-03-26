@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -33,27 +34,31 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+import io.openslice.sol005nbi.OSMUtil.OSMVNFDExtractor;
+
 import org.opendaylight.yang.gen.v1.urn.etsi.osm.yang.vnfd.rev170228.vnfd.catalog.Vnfd;
 
-public class OSM7VNFDExtractor {
+public class OSM7VNFDExtractor implements OSMVNFDExtractor{
 
     private static int BUFFER_SIZE = 4 * 1024;
 
-    private File VNFDescriptorFile;
+    private String VNFDescriptorFilePath;
 
 	private String descriptorYAMLfile;	
 	
 	private ByteArrayOutputStream iconfilePath;	
 
 
-	public OSM7VNFDExtractor(File VNFDescriptorFile) {
-        this.VNFDescriptorFile = VNFDescriptorFile;
+	public OSM7VNFDExtractor(String filePath) {
+        this.VNFDescriptorFilePath = filePath;
     }
     
     public Vnfd extractVnfdDescriptor() throws IOException {
     	Vnfd descriptor = null;
     	// Read the vnf descriptor file
-        try (InputStream in = new FileInputStream(VNFDescriptorFile);
+    	//System.out.println("Get the file from "+"http://localhost:13000"+this.VNFDescriptorFilePath);
+    	//try (InputStream in = new URL("http://localhost:13000"+this.VNFDescriptorFilePath).openStream();
+        try (InputStream in = new FileInputStream(VNFDescriptorFilePath);
     		//unzip
             GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
     		//untar
@@ -77,49 +82,50 @@ public class OSM7VNFDExtractor {
 					}
 					// Set the file as the yaml file
 					this.descriptorYAMLfile = new String(file.toByteArray());
-					
-					ObjectMapper mapper = new ObjectMapper(new YAMLFactory());					
-					JsonNode tr = null;
-					try {
-						// If the file is not empty
-						if ( !this.descriptorYAMLfile.equals("") ) {
-							// Search in yaml for vnfd:vnfd
-							tr = mapper.readTree( this.descriptorYAMLfile ).findValue("vnfd:vnfd");
-							// If there isn't any, search for vnfd
-							if ( tr == null ) {
-						    	tr = mapper.readTree( this.descriptorYAMLfile ).findValue("vnfd");
-					        }
-					    }    
-					}
-					catch(Exception e)
-					{
-						System.out.println("Cannot read file " + entry.getName());
-					}
-					    					   
-				    // If there is a node found
-					if ( tr != null ) {      
-						// Get the first element
-						if (tr.get(0) != null){ 
-							tr = tr.get(0);
-						}
-						// Convert it to string
-					    String s = tr.toString();                     
-					
-					    //Replace rw-vnfd with empty string
-						s = s.replaceAll("rw-vnfd:", ""); //some yaml files contain  rw-vnfd: prefix in every key which is not common in json
-						//Replace vnfd with empty string
-						s = s.replaceAll("vnfd:", ""); //some yaml files contain  nsd: prefix in every key which is not common in json
-						System.out.println(s);
-						//try {
-						descriptor = mapper.readValue( s , Vnfd.class);
-						//}catch (Exception e) {
-						//	System.out.println("ERROR: " + entry.getName() + " cannot be read as Vnfd class! " + e.getMessage());        						
-						//}                        	
-					}else {
-						System.out.println("ERROR: " + entry.getName() + " does not contain vnfd tag! " );
-					}
+//					
+//					ObjectMapper mapper = new ObjectMapper(new YAMLFactory());					
+//					JsonNode tr = null;
+//					try {
+//						// If the file is not empty
+//						if ( !this.descriptorYAMLfile.equals("") ) {
+//							// Search in yaml for vnfd:vnfd
+//							tr = mapper.readTree( this.descriptorYAMLfile ).findValue("vnfd:vnfd");
+//							// If there isn't any, search for vnfd
+//							if ( tr == null ) {
+//						    	tr = mapper.readTree( this.descriptorYAMLfile ).findValue("vnfd");
+//					        }
+//					    }    
+//					}
+//					catch(Exception e)
+//					{
+//						System.out.println("Cannot read file " + entry.getName());
+//					}
+//					    					   
+//				    // If there is a node found
+//					if ( tr != null ) {      
+//						// Get the first element
+//						if (tr.get(0) != null){ 
+//							tr = tr.get(0);
+//						}
+//						// Convert it to string
+//					    String s = tr.toString();                     
+//					
+//					    //Replace rw-vnfd with empty string
+//						s = s.replaceAll("rw-vnfd:", ""); //some yaml files contain  rw-vnfd: prefix in every key which is not common in json
+//						//Replace vnfd with empty string
+//						s = s.replaceAll("vnfd:", ""); //some yaml files contain  nsd: prefix in every key which is not common in json
+//						System.out.println(s);
+//						//try {
+//						descriptor = mapper.readValue( s , Vnfd.class);
+//						//}catch (Exception e) {
+//						//	System.out.println("ERROR: " + entry.getName() + " cannot be read as Vnfd class! " + e.getMessage());        						
+//						//}                        	
+//					}else {
+//						System.out.println("ERROR: " + entry.getName() + " does not contain vnfd tag! " );
+//					}
+					descriptor = extractVnfdDescriptorFromYAMLFile(this.descriptorYAMLfile);					
                 }
-                // If the file is a png or a jpg
+				// If the file is a png or a jpg
                 if  ( entry.getName().endsWith(".png") || entry.getName().endsWith(".jpg")) {                    	
 					this.iconfilePath = new ByteArrayOutputStream();
 					//Copy the file to iconfilePath
@@ -135,6 +141,28 @@ public class OSM7VNFDExtractor {
         return descriptor;
     }
 
+    public void extractIcon() throws IOException {
+        try (InputStream in = new FileInputStream(VNFDescriptorFilePath);
+    		//unzip
+            GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
+    		//untar
+            TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn)){
+            TarArchiveEntry entry = null;
+            // Iterate through the files in the archive
+            while ((entry = tarIn.getNextTarEntry()) != null) {              
+                // If the file is a png or a jpg
+                if  ( entry.getName().endsWith(".png") || entry.getName().endsWith(".jpg")) {                    	
+					this.iconfilePath = new ByteArrayOutputStream();
+					//Copy the file to iconfilePath
+					int count;
+					byte data[] = new byte[BUFFER_SIZE];
+					while((count = tarIn.read(data, 0, BUFFER_SIZE)) != -1) {
+						this.iconfilePath.write(data, 0, count);
+					}                	
+                }
+            }
+        }
+    }
 
 //    public VNFDescriptor extractDescriptor() throws IOException {
 //        try (InputStream in = new FileInputStream(VNFDescriptorFile);
@@ -200,5 +228,52 @@ public class OSM7VNFDExtractor {
 
     public ByteArrayOutputStream getIconfilePath() {
 		return iconfilePath;
-	}    
+	}
+
+    public static Vnfd extractVnfdDescriptorFromYAMLFile(String descriptorYAMLfile) throws IOException {
+    	Vnfd descriptor = null;
+		// Set the file as the yaml file
+		
+		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());					
+		JsonNode tr = null;
+		try {
+			// If the file is not empty
+			if ( !descriptorYAMLfile.equals("") ) {
+				// Search in yaml for vnfd:vnfd
+				tr = mapper.readTree( descriptorYAMLfile ).findValue("vnfd:vnfd");
+				// If there isn't any, search for vnfd
+				if ( tr == null ) {
+			    	tr = mapper.readTree( descriptorYAMLfile ).findValue("vnfd");
+		        }
+		    }    
+		}
+		catch(Exception e)
+		{
+			System.out.println("Cannot read yaml file");
+		}
+		    					   
+	    // If there is a node found
+		if ( tr != null ) {      
+			// Get the first element
+			if (tr.get(0) != null){ 
+				tr = tr.get(0);
+			}
+			// Convert it to string
+		    String s = tr.toString();                     
+		
+		    //Replace rw-vnfd with empty string
+			s = s.replaceAll("rw-vnfd:", ""); //some yaml files contain  rw-vnfd: prefix in every key which is not common in json
+			//Replace vnfd with empty string
+			s = s.replaceAll("vnfd:", ""); //some yaml files contain  nsd: prefix in every key which is not common in json
+			System.out.println(s);
+			//try {
+			descriptor = mapper.readValue( s , Vnfd.class);
+			//}catch (Exception e) {
+			//	System.out.println("ERROR: " + entry.getName() + " cannot be read as Vnfd class! " + e.getMessage());        						
+			//}                        	
+		}else {
+			System.out.println("ERROR: The yaml file does not contain vnfd tag! " );
+		}
+		return descriptor;
+    }
 }
