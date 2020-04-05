@@ -624,6 +624,13 @@ public class OSM7Client implements OSMClient{
 		JSONObject vnf_instance_info_obj = new JSONObject(vnf_instance_id_info_response.getBody());
 		return vnf_instance_info_obj;		
 	}	
+
+	public String getPDUDetails()
+	{
+		ResponseEntity<String> pdu_details_response = this.getOSMResponse("/pdu/v1/pdu_descriptors/");		
+		//JSONObject pdu_details_response_obj = new JSONObject(pdu_details_response.getBody());
+		return pdu_details_response.toString();		
+	}	
 	
 	public ResponseEntity<String> getVNFInstanceInfoNew(String vnf_instance_id)
 	{

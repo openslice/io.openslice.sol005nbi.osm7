@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +49,16 @@ public class NSInstantiateInstanceRequestPayload
 		this.vimAccountId = vimAccountId;
 	}
 
+	private Boolean wimAccountId;
+	public Boolean getWimAccountId() {
+		return wimAccountId;
+	}
+
+	public void setWimAccountId(Boolean wimAccountId) {
+		this.wimAccountId = wimAccountId;
+	}
+
+	
 	private String nsdId;
 	public String getNsdId() {
 		return nsdId;
@@ -67,6 +78,16 @@ public class NSInstantiateInstanceRequestPayload
 		public void setMemberVnFIndex(String memberVnFIndex) {
 			this.memberVnFIndex = memberVnFIndex;
 		}
+		@JsonProperty("vdu")
+		private List<Vdu> vdu = null;
+		
+		public List<Vdu> getVdu() {
+			return vdu;
+		}
+		public void setVdu(List<Vdu> vdu) {
+			this.vdu = vdu;
+		}
+		
 		@JsonProperty("vimAccountId")
 		private String vimAccount;
 		public String getVimAccount() {
@@ -81,27 +102,77 @@ public class NSInstantiateInstanceRequestPayload
 			
 		};
 	}
-	class Vld
+	
+	
+	public class Vdu
 	{
+		@JsonProperty("id")
+		private String id;
+		@JsonProperty("interface")
+		private ArrayList<NInterface> interfaceObj = null;
+
+		public ArrayList<NInterface> getInterfaceObj() {
+			return interfaceObj;
+		}
+		public void setInterfaceObj(ArrayList<NInterface> interfaceObj) {
+			this.interfaceObj = interfaceObj;
+		}
+		public String getId() {
+			return id;
+		}
+		public void setId(String id) {
+			this.id = id;
+		}
+	}
+	
+	public class NInterface
+	{
+		@JsonProperty("name")
 		private String name;
+		@JsonProperty("floating-ip-required")
+		private Boolean floating_ip_required;
 		public String getName() {
 			return name;
 		}
 		public void setName(String name) {
 			this.name = name;
 		}
+		public Boolean getFloating_ip_required() {
+			return floating_ip_required;
+		}
+		public void setFloating_ip_required(Boolean floating_ip_required) {
+			this.floating_ip_required = floating_ip_required;
+		}
+	}
+
+	class Vld
+	{
+		@JsonProperty("name")
+		private String name;
 		@JsonProperty("vim-network-name")
 		private LinkedHashMap<String,String> vimNetworkName = new LinkedHashMap<>();
+
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
 		public LinkedHashMap<String, String> getVimNetworkName() {
 			return vimNetworkName;
 		}
 		public void setVimNetworkName(LinkedHashMap<String, String> vimNetworkName) {
 			this.vimNetworkName = vimNetworkName;
 		}
+//		private String vimNetworkName;
+//		public String getVimNetworkName() {
+//			return vimNetworkName;
+//		}
+//		public void setVimNetworkName(String vimNetworkName) {
+//			this.vimNetworkName = vimNetworkName;
+//		}
 	}
 	private List<VnF> vnf = new ArrayList<>();
-	//public List<Vld> vld = new ArrayList<>();
-		
 	public List<VnF> getVnf() {
 		return vnf;
 	}
@@ -110,6 +181,17 @@ public class NSInstantiateInstanceRequestPayload
 		this.vnf = vnf;
 	}
 
+	private List<Vld> vld = new ArrayList<>();
+	
+	public List<Vld> getVld() {
+		return vld;
+	}
+
+	public void setVld(List<Vld> vld) {
+		this.vld = vld;
+	}
+
+	
 //	public NSInstantiateInstanceRequestPayload(String nsName, String vimAccountId, String nsdId)
 //	{
 //		this.nsName = nsName;
@@ -138,8 +220,9 @@ public class NSInstantiateInstanceRequestPayload
 	{
 		String jsonInString=null;
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(Include.NON_NULL);
 		try {
-			jsonInString = mapper.writeValueAsString(this);
+			jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
