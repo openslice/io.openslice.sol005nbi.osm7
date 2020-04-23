@@ -361,6 +361,78 @@ public class OSM7Client implements OSMClient{
 		}				
 	}
 
+	public ResponseEntity<String> uploadVNFDPackageByteArrayContent(String vnfd_id, String package_path) throws IOException{
+		RestTemplate restTemplate = new RestTemplate(requestFactory);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("content-type", "application/zip");
+		headers.add("Authorization", "Bearer " + this.getMANOAuthorizationBasicHeader());
+		byte[] allBytes;
+		try
+		{		
+		    logger.info("VNFD Package path = " + package_path);						
+			if(package_path.contains("http")||package_path.contains("localhost"))
+			{
+			    logger.info("Taking the http/localhost logic path");						
+				URL url = new URL(package_path);
+			    logger.info("Trying to open connection to URL");						
+				URLConnection conn = url.openConnection();	
+			    logger.info("URL Connection "+conn.toString());						
+				int contentLength = conn.getContentLength();			
+			    logger.info("Content-Length:"+contentLength);						
+				InputStream inputStream = url.openStream();			
+	
+				ByteArrayOutputStream tmpOut;
+			    if (contentLength != -1) {
+			        tmpOut = new ByteArrayOutputStream(contentLength);
+			    } else {
+			        tmpOut = new ByteArrayOutputStream(16384); // Pick some appropriate size
+			    }
+	
+			    byte[] buf = new byte[512];
+			    while (true) {
+			        int len = inputStream.read(buf);
+			        if (len == -1) {
+			            break;
+			        }
+			        tmpOut.write(buf, 0, len);
+			    }
+			    tmpOut.close(); // No effect, but good to do anyway to keep the metaphor alive
+			    allBytes = tmpOut.toByteArray();			
+			    logger.info("VNFD Package allBytes size = "+allBytes.length);						
+				logger.info("VNFD Package Filesize: " + contentLength + " bytes.");
+				inputStream.close();
+			}
+			else
+			{
+			    logger.info("Taking the local file path");						
+				InputStream inputStream = new FileInputStream(package_path);
+				long fileSize = new File(package_path).length();
+				allBytes = new byte[(int) fileSize];
+				inputStream.read(allBytes);
+				logger.info("VNFD Package Filesize: " + fileSize + " bytes.");
+				inputStream.close();
+			}
+		}
+		catch(Exception e)
+		{
+			logger.error("Error during VNFD Package file uploading! "+e.getStackTrace().toString());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during VNFD Package file uploading! "+e.getMessage().toString());			
+		}
+		
+		HttpEntity<byte[]> send_zip_request = new HttpEntity<>(allBytes, headers);
+		try
+		{
+			return restTemplate.exchange(this.getMANOApiEndpoint()
+					+ "/osm/vnfpkgm/v1/vnf_packages/" + vnfd_id + "/package_content", HttpMethod.PUT,
+					send_zip_request, String.class);
+		}
+	    catch(HttpStatusCodeException e) 
+		{
+	        return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+		}				
+	}
+	
 	public ResponseEntity<String> uploadNSDPackageContent(String nsd_id, String package_path) throws IOException{
 		RestTemplate restTemplate = new RestTemplate(requestFactory);
 		HttpHeaders headers = new HttpHeaders();
@@ -608,6 +680,32 @@ public class OSM7Client implements OSMClient{
 	public JSONObject getNSInstanceInfo(String ns_instance_id)
 	{
 		ResponseEntity<String> ns_instance_id_info_response = this.getOSMResponse("/osm/nslcm/v1/ns_instances/"+ns_instance_id);
+		logger.info("Status of Request: "+ns_instance_id_info_response.getStatusCode());
+		if(!ns_instance_id_info_response.getStatusCode().is4xxClientError() && !ns_instance_id_info_response.getStatusCode().is5xxServerError() )
+		{
+			JSONObject ns_instance_info_obj = new JSONObject(ns_instance_id_info_response.getBody());
+			return ns_instance_info_obj;		
+		}
+		else
+			return null;
+	}	
+
+	public JSONObject getNSInstanceContentInfo(String ns_instance_id)
+	{
+		ResponseEntity<String> ns_instance_id_info_response = this.getOSMResponse("/osm/nslcm/v1/ns_instances_content/"+ns_instance_id);
+		logger.info("Status of Request: "+ns_instance_id_info_response.getStatusCode());
+		if(!ns_instance_id_info_response.getStatusCode().is4xxClientError() && !ns_instance_id_info_response.getStatusCode().is5xxServerError() )
+		{
+			JSONObject ns_instance_info_obj = new JSONObject(ns_instance_id_info_response.getBody());
+			return ns_instance_info_obj;		
+		}
+		else
+			return null;
+	}
+	
+	public JSONObject getNSLCMDetails(String nsLcmOpOccId)
+	{
+		ResponseEntity<String> ns_instance_id_info_response = this.getOSMResponse("/osm/nslcm/v1/ns_lcm_op_occs/"+nsLcmOpOccId);
 		logger.info("Status of Request: "+ns_instance_id_info_response.getStatusCode());
 		if(!ns_instance_id_info_response.getStatusCode().is4xxClientError() && !ns_instance_id_info_response.getStatusCode().is5xxServerError() )
 		{
