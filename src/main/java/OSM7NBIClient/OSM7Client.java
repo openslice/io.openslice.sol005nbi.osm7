@@ -809,9 +809,15 @@ public class OSM7Client implements OSMClient{
 		headers.add("Authorization", "Bearer " + this.getMANOAuthorizationBasicHeader());
 		HttpEntity<String> request = new HttpEntity<String>(headers);
 		ResponseEntity<String> entity = null;
-		entity = restTemplate.exchange(
-		this.getMANOApiEndpoint() + "/osm/vnfpkgm/v1/vnf_packages/"+vnfd_id, HttpMethod.DELETE, request,String.class);
-		System.out.println("The delete VNFD Package with id "+vnfd_id+" returned code :" + entity.getStatusCodeValue());
+		try {
+			entity = restTemplate.exchange(
+					this.getMANOApiEndpoint() + "/osm/vnfpkgm/v1/vnf_packages/"+vnfd_id, HttpMethod.DELETE, request,String.class);
+	    } catch(HttpStatusCodeException e) {
+	        return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+	    }		
+		logger.info("The delete NSD Package with id "+vnfd_id+" returned :" + entity.toString());
+		
 		return entity;
 	}
 	
@@ -838,10 +844,16 @@ public class OSM7Client implements OSMClient{
 		headers.add("accept", "application/json");
 		headers.add("Authorization", "Bearer " + this.getMANOAuthorizationBasicHeader());
 		HttpEntity<String> request = new HttpEntity<String>(headers);
-		ResponseEntity<String> entity = restTemplate.exchange(
+		ResponseEntity<String> entity = null;
+		try {
+			entity = restTemplate.exchange(
 				this.getMANOApiEndpoint() + "/osm/nsd/v1/ns_descriptors/"+nsd_id, HttpMethod.DELETE, request,
 				String.class);
-		System.out.println("The delete NSD Package with id "+nsd_id+" returned code :" + entity.getStatusCode().toString());
+	    } catch(HttpStatusCodeException e) {
+	        return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+	    }		
+		logger.info("The delete NSD Package with id "+nsd_id+" returned :" + entity.toString());
 		return entity;
 	}
 	
