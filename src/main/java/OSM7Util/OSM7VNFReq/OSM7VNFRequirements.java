@@ -45,11 +45,17 @@ public class OSM7VNFRequirements {
         this.vmCount = 0;
 
         for(Vdu vdu : descriptor.getVdu() ) {   
+
+    		int cnt =1;
+        	if ( vdu.getCount() != null ) {
+        		cnt = vdu.getCount().intValue(); 
+        	}
+        	
         	if (  vdu.getVmFlavor() != null ) {
-                this.memoryMB +=  vdu.getCount().intValue()  * vdu.getVmFlavor().getMemoryMb().intValue();
-                this.storageGB += vdu.getCount().intValue() * vdu.getVmFlavor().getStorageGb().intValue();
-                this.vcpuCount += vdu.getCount().intValue() * 1;//vdu.getVmFlavor().getVcpuCount().intValue();
-                this.vmCount += vdu.getCount().intValue();
+                this.memoryMB +=  cnt  * vdu.getVmFlavor().getMemoryMb().intValue();
+                this.storageGB += cnt * vdu.getVmFlavor().getStorageGb().intValue();
+                this.vcpuCount += cnt * 1;//vdu.getVmFlavor().getVcpuCount().intValue();
+                this.vmCount += cnt;
         	}
         }
     }
