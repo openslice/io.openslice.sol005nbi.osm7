@@ -572,6 +572,11 @@ public class OSM7Client implements OSMClient{
 			return null;
 	}	
 
+	public ResponseEntity<String> getNSLCMDetailsList()
+	{
+		return this.getOSMResponse("/osm/nslcm/v1/ns_lcm_op_occs/");
+	}	
+	
 	public JSONObject getVNFInstanceInfo(String vnf_instance_id)
 	{
 		ResponseEntity<String> vnf_instance_id_info_response = this.getOSMResponse("/osm/nslcm/v1/vnf_instances/"+vnf_instance_id);		
@@ -625,6 +630,30 @@ public class OSM7Client implements OSMClient{
 	                .body(e.getResponseBodyAsString());
 		}
 	}
+	
+	public ResponseEntity<String> actionNSInstance(String ns_instance_id, String payload) 
+	{
+		RestTemplate restTemplate = new RestTemplate(requestFactory);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("content-type", "application/json");
+		headers.add("accept", "application/json");
+		headers.add("Authorization", "Bearer " + this.getMANOAuthorizationBasicHeader());
+		System.out.println( "/osm/nslcm/v1/ns_instances/"+ns_instance_id+"/action");
+
+		String body = payload;
+		HttpEntity<String> create_ns_instance_request = new HttpEntity<>(body, headers);
+		System.out.println(create_ns_instance_request);	
+		try
+		{
+			return restTemplate.exchange(this.getMANOApiEndpoint() + "/osm/nslcm/v1/ns_instances/"+ns_instance_id+"/action", HttpMethod.POST, create_ns_instance_request,String.class);
+		}
+	    catch(HttpStatusCodeException e) 
+		{
+	        return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+		}
+	}
+
 	
 	public String terminateNSInstance(String ns_instance_id) {
 		RestTemplate restTemplate = new RestTemplate(requestFactory);
