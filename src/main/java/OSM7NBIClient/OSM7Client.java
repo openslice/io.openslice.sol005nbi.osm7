@@ -53,6 +53,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -576,6 +577,27 @@ public class OSM7Client implements OSMClient{
 	{
 		return this.getOSMResponse("/osm/nslcm/v1/ns_lcm_op_occs/");
 	}	
+
+	public String getNSLCMDetailsListByNSID(String nsid)
+	{
+		ResponseEntity<String> response = this.getOSMResponse("/osm/nslcm/v1/ns_lcm_op_occs/");
+		String response_body = response.getBody();
+		try {
+	        JSONArray array = new JSONArray(response_body);
+	        JSONArray array2 = new JSONArray();
+	        for (int i = 0; i < array.length(); ++i) {
+	            JSONObject obj = array.getJSONObject(i);
+	            String id = obj.getString("nsInstanceId");
+	            if (id.equals(nsid)) {
+	                array2.put(obj);
+	            }
+
+	        }	        
+			return array2.toString();
+	    } catch (JSONException e) {
+	        return null;
+	    }
+	}	
 	
 	public JSONObject getVNFInstanceInfo(String vnf_instance_id)
 	{
@@ -654,6 +676,29 @@ public class OSM7Client implements OSMClient{
 		}
 	}
 
+	public ResponseEntity<String> scaleNSInstance(String ns_instance_id, String payload) 
+	{
+		RestTemplate restTemplate = new RestTemplate(requestFactory);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("content-type", "application/json");
+		headers.add("accept", "application/json");
+		headers.add("Authorization", "Bearer " + this.getMANOAuthorizationBasicHeader());
+		System.out.println( "/osm/nslcm/v1/ns_instances/"+ns_instance_id+"/scale");
+
+		String body = payload;
+		HttpEntity<String> create_ns_instance_request = new HttpEntity<>(body, headers);
+		System.out.println(create_ns_instance_request);	
+		try
+		{
+			return restTemplate.exchange(this.getMANOApiEndpoint() + "/osm/nslcm/v1/ns_instances/"+ns_instance_id+"/scale", HttpMethod.POST, create_ns_instance_request,String.class);
+		}
+	    catch(HttpStatusCodeException e) 
+		{
+	        return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+		}
+	}
+	
 	
 	public String terminateNSInstance(String ns_instance_id) {
 		RestTemplate restTemplate = new RestTemplate(requestFactory);
