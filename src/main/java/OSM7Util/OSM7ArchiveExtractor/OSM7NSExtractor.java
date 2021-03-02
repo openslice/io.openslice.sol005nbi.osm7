@@ -122,58 +122,5 @@ public class OSM7NSExtractor implements OSMNSExtractor{
         }
 		return descriptor;
 	}
-
-//	public NSDescriptor extractDescriptor() throws IOException {
-//	try (InputStream in = new FileInputStream(NSDescriptorFile);
-//			GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
-//			TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn)) {
-//		
-//		TarArchiveEntry entry, root = null;
-//
-//		while ((entry = tarIn.getNextTarEntry()) != null) {
-//			if (root == null && entry.getName().indexOf("/") == entry.getName().length() - 1) {
-//				root = entry;
-//				continue;
-//			}
-//
-//			if (entry.getName().indexOf("/", root.getName().length()) == -1 && entry.getName().endsWith(".yaml")) {
-//				ByteArrayOutputStream file = new ByteArrayOutputStream();
-//
-//				int count;
-//				byte data[] = new byte[BUFFER_SIZE];
-//
-//				while ((count = tarIn.read(data, 0, BUFFER_SIZE)) != -1) {
-//					file.write(data, 0, count);
-//				}
-//
-//				ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-//				mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//
-//				this.descriptorYAMLfile = new String(file.toByteArray());
-//				NSTopLevelContainer container = mapper.readValue(file.toByteArray(), NSTopLevelContainer.class);
-//
-//				if (container != null) {
-//					NSDescriptor descriptor = container.catalog.descriptors.get(0);
-//
-//					try {
-//						mapper = new ObjectMapper(new YAMLFactory());
-//						mapper.readValue(file.toByteArray(), NSTopLevelContainer.class);
-//						descriptor.unknownFields = false;
-//					} catch (JsonMappingException ex) {
-//						ex.printStackTrace();
-//						descriptor.unknownFields = true;
-//					}
-//
-//					return descriptor;
-//				} else {
-//					return null;
-//				}
-//			}
-//		}
-//	}
-//
-//	return null;
-//}
-
 	
 }
